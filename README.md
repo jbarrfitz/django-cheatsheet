@@ -33,7 +33,7 @@
 ## Create Model
 
 1. Edit models.py
-2. `python manage.py createmigrations`
+2. `python manage.py makemigrations`
 3. `python manage.py migrate`
 4. Register model in admin.py
 
@@ -197,5 +197,62 @@ model = Thing
 fields = "__all__"
 ```
 
+## Set up a Custom User Model
 
+- Create an app where you will build the customer user model (often called accounts)
+- Go to `settings.py`
+  - register `accounts` under INSTALLED_APPS
+  - add AUTH_USER_MODEL = 'accounts.CustomUser'
+- Go to `models.py`
 
+```python
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+class CustomUser(AbstractUser):
+    pass
+    # We can add additional fields here
+
+    def __str__(self):
+        return self.username
+```
+
+- Go to accounts folder and create `forms.py`
+
+```python
+from django import forms
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+
+# Link the form to the Custom User Model
+from .models import CustomUser
+
+class CustomUserCreationForm(UserCreationForm):
+
+    class Meta:
+        model = CustomUser
+        fields = ("username", "email")
+
+class CustomUserChangeForm(UserChangeForm):
+
+    class Meta:
+        model = CustomUser
+        fields = ("username", "email")
+```
+
+- Go to `admin.py`
+
+```python
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .forms import CustomUserCreationForm, CustomUserChangeForm
+from .models import CustomUser
+
+class CustomUserAdmin(UserAdmin):
+    add_form = CustomUserCreationForm
+    form = CustomUserChangeForm
+    model = CustomUser
+    list_display = ['email', 'username']
+
+admin.site.register(CustomUser, CustomUserAdmin)
+```
